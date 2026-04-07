@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+@theme {
+  --color-k3-blue: #0A4A8E;
+  --color-k3-green: #1DB954;
+  --color-k3-dark: #05264a;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #0f172a; /* Darker starting background */
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  overflow-x: hidden;
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Custom Utilities for 3D and Glass */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+.glass-input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.glass-input:focus {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255,255,255, 0.5);
+  box-shadow: 0 0 15px rgba(29, 185, 84, 0.3);
+}
+
+/* Gradient Animation Animation */
+@keyframes gradientBG {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animated-bg {
+  background: linear-gradient(-45deg, #05264a, #0A4A8E, #0a4a8e, #1DB954);
+  background-size: 400% 400%;
+  animation: gradientBG 15s ease infinite;
+}

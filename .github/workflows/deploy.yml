@@ -1,0 +1,35 @@
+name: Deploy to Google Apps Script
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Build React App
+        run: |
+          npm ci
+          npm run build
+
+      - name: Install & Authenticate Clasp
+        run: |
+          npm install -g @google/clasp
+          echo '${{ secrets.CLASP_TOKEN }}' > ~/.clasprc.json
+          
+      # Navigate to gas folder and push
+      - name: Deploy to Apps Script
+        run: |
+          cd gas
+          clasp push -f
