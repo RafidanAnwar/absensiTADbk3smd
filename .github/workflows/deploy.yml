@@ -1,9 +1,12 @@
-name: Deploy to Google Apps Script
+name: Deploy to GAS and GitHub Pages
 
 on:
   push:
     branches:
       - main
+
+permissions:
+  contents: write
 
 jobs:
   deploy:
@@ -29,7 +32,14 @@ jobs:
           echo '${{ secrets.CLASP_TOKEN }}' > ~/.clasprc.json
           
       # Navigate to gas folder and push
-      - name: Deploy to Apps Script
+      - name: Deploy Backend to Apps Script
         run: |
           cd gas
           clasp push -f
+
+      # Deploy to GitHub Pages (gh-pages branch)
+      - name: Deploy Frontend to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
