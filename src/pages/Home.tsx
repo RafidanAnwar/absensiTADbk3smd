@@ -24,7 +24,7 @@ export default function Home() {
           {/* Logo with Glow */}
           <div className="w-28 h-28 mx-auto mb-6 object-contain relative group">
             <div className="absolute inset-0 bg-white/20 rounded-full blur-2xl group-hover:bg-white/30 transition-all duration-500"></div>
-            <img src="/logo balaik3smd.png" alt="Logo Balai K3" className="w-full h-full relative z-10 drop-shadow-[0_0_15px_rgba(255,255,255,0.7)]" />
+            <img src={`${import.meta.env.BASE_URL}logo balaik3smd.png`} alt="Logo Balai K3" className="w-full h-full relative z-10 drop-shadow-[0_0_15px_rgba(255,255,255,0.7)]" />
           </div>
           <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-green-300 drop-shadow-md">
             Aplikasi Absensi TAD
