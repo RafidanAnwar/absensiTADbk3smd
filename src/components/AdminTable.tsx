@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { FaDownload, FaSyncAlt } from 'react-icons/fa';
 import { fetchPresensi } from '../utils/api';
 
@@ -38,7 +38,7 @@ export default function AdminTable() {
       item.status
     ]);
 
-    doc.autoTable({
+    autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
       startY: 20,
