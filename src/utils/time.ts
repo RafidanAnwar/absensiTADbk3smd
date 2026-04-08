@@ -35,3 +35,8 @@ export function isPulangTime() {
   const { hour } = getCurrentWITA();
   return hour >= 16 && hour < 24; // 16:00 - 23:59
 }
+
+export function getTipeAbsenFallback() {
+  const { hour } = getCurrentWITA();
+  return hour < 13 ? 'Masuk' : 'Pulang';
+}

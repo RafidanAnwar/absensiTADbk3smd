@@ -39,8 +39,9 @@ function doGet(e) {
 
   const headers = data[0];
   const rows = data.slice(1);
-  const result = rows.map(r => {
+  const result = rows.map((r, i) => {
     return {
+      rowId: i + 2,
       tanggal: r[0],
       nik: r[1],
       nama: r[2],
@@ -64,9 +65,32 @@ function doGet(e) {
 function doPost(e) {
   try {
     const payload = JSON.parse(e.postData.contents);
-    const { nama, nik, jabatan, status, aktivitas, waktu, tipe, lokasi, fotoBase64 } = payload;
+    const { action = 'submit', rowId, nama, nik, jabatan, status, aktivitas, waktu, tipe, lokasi, fotoBase64, jamMasuk, jamPulang, tanggal } = payload;
 
-    // Validate inputs
+    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getActiveSheet();
+
+    if (action === 'delete') {
+      if (!rowId) return createResponse({ status: 'error', message: 'Missing rowId' });
+      sheet.deleteRow(rowId);
+      return createResponse({ status: 'success', message: 'Data deleted' });
+    }
+
+    if (action === 'update') {
+      if (!rowId) return createResponse({ status: 'error', message: 'Missing rowId' });
+      const row = sheet.getRange(rowId, 1, 1, 12).getValues()[0];
+      row[0] = tanggal !== undefined ? tanggal : row[0];
+      row[1] = nik !== undefined ? nik : row[1];
+      row[2] = nama !== undefined ? nama : row[2];
+      row[3] = jabatan !== undefined ? jabatan : row[3];
+      row[4] = jamMasuk !== undefined ? jamMasuk : row[4];
+      row[7] = jamPulang !== undefined ? jamPulang : row[7];
+      row[10] = status !== undefined ? status : row[10];
+      row[11] = aktivitas !== undefined ? aktivitas : row[11];
+      sheet.getRange(rowId, 1, 1, 12).setValues([row]);
+      return createResponse({ status: 'success', message: 'Data updated' });
+    }
+
+    // Default 'submit' logic
     if (!nama || !nik || !tipe || !fotoBase64) {
       return createResponse({ status: 'error', message: 'Missing required fields' });
     }
@@ -76,7 +100,6 @@ function doPost(e) {
     const d = new Date();
     const tanggalStr = Utilities.formatDate(d, 'GMT+8', 'yyyy-MM-dd');
 
-    const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getActiveSheet();
     const data = sheet.getDataRange().getValues();
     const headers = data[0] || ["Tanggal", "NIK", "Nama", "Jabatan", "Jam Masuk", "Foto Masuk", "Lokasi Masuk", "Jam Pulang", "Foto Pulang", "Lokasi Pulang", "Status", "Aktivitas"];
 

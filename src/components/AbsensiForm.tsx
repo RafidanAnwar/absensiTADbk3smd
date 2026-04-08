@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import Webcam from 'react-webcam';
 import { FaCamera, FaMapMarkerAlt, FaSyncAlt } from 'react-icons/fa';
 import { DATA_PEGAWAI, STATUS_KEHADIRAN, type Pegawai } from '../utils/data';
-import { getCurrentWITA, isMasukTime, isPulangTime } from '../utils/time';
+import { getCurrentWITA, isMasukTime, isPulangTime, getTipeAbsenFallback } from '../utils/time';
 import { submitPresensi } from '../utils/api';
 
 export default function AbsensiForm() {
@@ -26,7 +26,8 @@ export default function AbsensiForm() {
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const tipeAbsen = isMasukTime() ? 'Masuk' : (isPulangTime() ? 'Pulang' : null);
+  const isOperasional = isMasukTime() || isPulangTime();
+  const tipeAbsen = isMasukTime() ? 'Masuk' : (isPulangTime() ? 'Pulang' : getTipeAbsenFallback());
 
   useEffect(() => {
     // Update live clock
@@ -88,10 +89,6 @@ export default function AbsensiForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tipeAbsen) {
-      alert("Saat ini bukan waktu absensi (Masuk: 07:00-10:00, Pulang: 16:00-24:00 WITA)");
-      return;
-    }
     if (!foto) {
       alert("Harap ambil foto bukti terlebih dahulu.");
       return;
@@ -137,7 +134,7 @@ export default function AbsensiForm() {
         </div>
       </div>
 
-      {!tipeAbsen && !isSuccess && (
+      {!isOperasional && !isSuccess && (
         <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 border border-red-100">
           Saat ini di luar jam operasional absensi. (Masuk: 07:00-10:00, Pulang: 16:00-24:00)
         </div>
@@ -165,7 +162,7 @@ export default function AbsensiForm() {
               onChange={handleNameChange}
               className="glass-input w-full px-4 py-2.5 rounded-xl outline-none"
               placeholder="Ketik nama Anda..."
-              disabled={!tipeAbsen || isSubmitLoading}
+              disabled={isSubmitLoading}
             />
             {suggestions.length > 0 && (
               <ul className="absolute top-full mt-2 w-full bg-slate-800/90 backdrop-blur-xl border border-white/10 shadow-2xl rounded-xl max-h-48 overflow-auto z-30">
@@ -191,7 +188,7 @@ export default function AbsensiForm() {
                 value={formData.nik}
                 onChange={(e) => setFormData({ ...formData, nik: e.target.value })}
                 className="glass-input w-full px-4 py-2.5 rounded-xl outline-none"
-                disabled={!tipeAbsen || isSubmitLoading}
+                disabled={isSubmitLoading}
               />
             </div>
             <div>
@@ -202,7 +199,7 @@ export default function AbsensiForm() {
                 value={formData.jabatan}
                 onChange={(e) => setFormData({ ...formData, jabatan: e.target.value })}
                 className="glass-input w-full px-4 py-2.5 rounded-xl outline-none"
-                disabled={!tipeAbsen || isSubmitLoading}
+                disabled={isSubmitLoading}
               />
             </div>
           </div>
@@ -214,7 +211,7 @@ export default function AbsensiForm() {
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                 className="glass-input w-full px-4 py-2.5 rounded-xl outline-none [&>option]:text-gray-800"
-                disabled={!tipeAbsen || isSubmitLoading}
+                disabled={isSubmitLoading}
               >
                 {STATUS_KEHADIRAN.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
@@ -252,7 +249,7 @@ export default function AbsensiForm() {
               onChange={(e) => setFormData({ ...formData, aktivitas: e.target.value })}
               className="glass-input w-full px-4 py-3 rounded-xl outline-none resize-none h-24"
               placeholder="Deskripsi aktivitas hari ini..."
-              disabled={!tipeAbsen || isSubmitLoading}
+              disabled={isSubmitLoading}
             />
           </div>
 
@@ -286,7 +283,7 @@ export default function AbsensiForm() {
                   type="button"
                   onClick={() => setShowWebcam(true)}
                   className="w-full py-6 md:py-10 border border-dashed border-white/30 rounded-2xl text-blue-100 hover:border-white/80 hover:bg-white/5 transition-all flex flex-col items-center gap-3 backdrop-blur-sm shadow-inner group"
-                  disabled={!tipeAbsen || isSubmitLoading}
+                  disabled={isSubmitLoading}
                 >
                   <FaCamera size={36} className="text-white/50 group-hover:text-white group-hover:scale-110 transition-all" />
                   <span className="font-medium tracking-wide">Aktifkan Kamera</span>
@@ -309,9 +306,9 @@ export default function AbsensiForm() {
 
           <button
             type="submit"
-            disabled={!tipeAbsen || !foto || isSubmitLoading}
+            disabled={!foto || isSubmitLoading}
             className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all tracking-wide 
-              ${(!tipeAbsen || !foto || isSubmitLoading) ? 'bg-white/10 text-white/40 cursor-not-allowed border border-white/5' : 'bg-white text-k3-dark hover:bg-green-50 shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-[1.02] active:scale-[0.98]'}`}
+              ${(!foto || isSubmitLoading) ? 'bg-white/10 text-white/40 cursor-not-allowed border border-white/5' : 'bg-white text-k3-dark hover:bg-green-50 shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-[1.02] active:scale-[0.98]'}`}
           >
             {isSubmitLoading ? 'Tunggu...' : `🚀 Submit Absen ${tipeAbsen || ''}`}
           </button>

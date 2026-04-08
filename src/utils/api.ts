@@ -32,3 +32,27 @@ export async function fetchPresensi() {
   const result = await response.json();
   return result.data || [];
 }
+
+export async function updatePresensi(rowId: number, data: any) {
+  const payload = { action: 'update', rowId, ...data };
+  const response = await fetch(GAS_URL, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+  });
+  const result = await response.json();
+  if (result.status !== 'success') throw new Error(result.message);
+  return result;
+}
+
+export async function deletePresensi(rowId: number) {
+  const payload = { action: 'delete', rowId };
+  const response = await fetch(GAS_URL, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' }
+  });
+  const result = await response.json();
+  if (result.status !== 'success') throw new Error(result.message);
+  return result;
+}
