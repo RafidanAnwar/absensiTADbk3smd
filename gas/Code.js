@@ -71,11 +71,9 @@ function doPost(e) {
       return createResponse({ status: 'error', message: 'Missing required fields' });
     }
 
-    // Generate date string (DD/MM/YYYY based on WITA in client or server)
-    // Actually using server date or passed "waktu" which is just time. 
-    // We should use server date for current day (adjust to UTC+8).
+    // Generate date string (DD/MM/YYYY based on GMT+8)
+    // Utilities.formatDate already converts the system Date to the target timezone
     const d = new Date();
-    d.setHours(d.getHours() + (d.getTimezoneOffset() / 60) + 8); // Manual adjust to UTC+8
     const tanggalStr = Utilities.formatDate(d, 'GMT+8', 'yyyy-MM-dd');
 
     const sheet = SpreadsheetApp.openById(SPREADSHEET_ID).getActiveSheet();

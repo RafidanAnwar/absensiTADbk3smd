@@ -20,16 +20,8 @@ export const DATA_PEGAWAI: Pegawai[] = [
 ];
 
 export const STATUS_KEHADIRAN = [
-  "Hadir",
-  "Izin", 
-  "Tugas Belajar", 
-  "Lembur", 
-  "Tidak Presensi", 
-  "Cuti", 
-  "Upacara Bendera", 
-  "Dinas Keluar", 
-  "WFO", 
-  "Diklat", 
-  "WFA", 
+  "Upacara Bendera",
+  "Dinas Keluar",
+  "WFO",
   "WFH"
 ];

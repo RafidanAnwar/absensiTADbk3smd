@@ -5,6 +5,19 @@ import { FaDownload, FaSyncAlt } from 'react-icons/fa';
 import { fetchPresensi } from '../utils/api';
 
 export default function AdminTable() {
+  const formatTime = (timeStr: any) => {
+    if (!timeStr) return '-';
+    if (typeof timeStr === 'string' && timeStr.includes('T') && timeStr.startsWith('1899')) {
+      try {
+        const d = new Date(timeStr);
+        return d.toLocaleTimeString('en-GB', { timeZone: 'Asia/Makassar' });
+      } catch {
+        return timeStr;
+      }
+    }
+    return timeStr;
+  };
+
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -33,8 +46,8 @@ export default function AdminTable() {
     const tableRows = data.map(item => [
       item.nama,
       item.nik,
-      item.jamMasuk || '-',
-      item.jamPulang || '-',
+      formatTime(item.jamMasuk),
+      formatTime(item.jamPulang),
       item.status
     ]);
 
@@ -94,13 +107,13 @@ export default function AdminTable() {
                   <div className="font-medium text-gray-800">{item.nama}</div>
                   <div className="text-xs text-gray-500">{item.nik}</div>
                 </td>
-                <td className="px-4 py-3 text-gray-600">{item.jamMasuk || '-'}</td>
+                <td className="px-4 py-3 text-gray-600">{formatTime(item.jamMasuk)}</td>
                 <td className="px-4 py-3">
                   {item.fotoMasuk ? (
                     <a href={item.fotoMasuk} target="_blank" rel="noreferrer" className="text-k3-blue hover:underline text-xs">Lihat Foto</a>
                   ) : '-'}
                 </td>
-                <td className="px-4 py-3 text-gray-600">{item.jamPulang || '-'}</td>
+                <td className="px-4 py-3 text-gray-600">{formatTime(item.jamPulang)}</td>
                 <td className="px-4 py-3">
                   {item.fotoPulang ? (
                     <a href={item.fotoPulang} target="_blank" rel="noreferrer" className="text-k3-blue hover:underline text-xs">Lihat Foto</a>

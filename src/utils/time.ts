@@ -1,20 +1,28 @@
 export function getCurrentWITA() {
-  const options: Intl.DateTimeFormatOptions = {
+  const date = new Date();
+  
+  const formatter = new Intl.DateTimeFormat('en-US', {
     timeZone: 'Asia/Makassar',
     hour12: false,
-    hour: '2-digit',
+    hour: 'numeric',
     minute: '2-digit',
     second: '2-digit',
-  };
+  });
   
-  const formatter = new Intl.DateTimeFormat('en-GB', options);
-  const timeString = formatter.format(new Date()); // e.g. "07:30:00"
+  const parts = formatter.formatToParts(date);
   
-  const hour = parseInt(timeString.substring(0, 2), 10);
+  let h = '00', m = '00', s = '00';
+  for (const part of parts) {
+    if (part.type === 'hour') h = part.value.padStart(2, '0');
+    if (part.type === 'minute') m = part.value.padStart(2, '0');
+    if (part.type === 'second') s = part.value.padStart(2, '0');
+  }
+  
+  if (h === '24') h = '00';
   
   return {
-    timeString,
-    hour
+    timeString: `${h}:${m}:${s}`,
+    hour: parseInt(h, 10)
   };
 }
 
