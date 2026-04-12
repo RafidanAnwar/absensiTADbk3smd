@@ -136,7 +136,7 @@ export default function AbsensiForm() {
 
       {!isOperasional && !isSuccess && (
         <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 border border-red-100">
-          Saat ini di luar jam operasional absensi. (Masuk: 07:00-10:00, Pulang: 16:00-24:00)
+          Saat ini di luar jam operasional absensi.
         </div>
       )}
 
@@ -263,10 +263,10 @@ export default function AbsensiForm() {
                     ref={webcamRef}
                     screenshotFormat="image/jpeg"
                     screenshotQuality={0.8}
-                    videoConstraints={{ 
+                    videoConstraints={{
                       facingMode: "user",
                       width: { ideal: 640 },
-                      height: { ideal: 480 } 
+                      height: { ideal: 480 }
                     }}
                     className="w-full max-h-64 object-cover"
                   />

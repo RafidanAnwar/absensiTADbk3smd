@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { FaTimes, FaLock, FaUser } from 'react-icons/fa';
+import { FaTimes, FaLock, FaUser, FaEye, FaEyeSlash } from 'react-icons/fa';
 
 interface AdminLoginModalProps {
   isOpen: boolean;
@@ -11,6 +11,7 @@ interface AdminLoginModalProps {
 export default function AdminLoginModal({ isOpen, onClose }: AdminLoginModalProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
@@ -91,13 +92,20 @@ export default function AdminLoginModal({ isOpen, onClose }: AdminLoginModalProp
                       <FaLock className="text-gray-400" />
                     </div>
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-k3-blue focus:border-k3-blue outline-none transition-all"
+                      className="w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-k3-blue focus:border-k3-blue outline-none transition-all"
                       placeholder="Masukkan password"
                       required
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
+                    >
+                      {showPassword ? <FaEyeSlash size={18} /> : <FaEye size={18} />}
+                    </button>
                   </div>
                 </div>
               </div>

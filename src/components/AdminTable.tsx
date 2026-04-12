@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { FaDownload, FaSyncAlt, FaEdit, FaTrash } from 'react-icons/fa';
+import { FaDownload, FaSyncAlt, FaEdit, FaTrash, FaSearch, FaFilter, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { fetchPresensi, deletePresensi, updatePresensi } from '../utils/api';
 import { STATUS_KEHADIRAN } from '../utils/data';
 
@@ -24,6 +24,12 @@ export default function AdminTable() {
   const [editingRow, setEditingRow] = useState<number | null>(null);
   const [editForm, setEditForm] = useState<any>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Filter & Pagination States
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('Semua');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const loadData = async () => {
     setLoading(true);
@@ -70,27 +76,27 @@ export default function AdminTable() {
   };
 
   const exportPDF = () => {
-    const doc = new jsPDF() as any;
-    
-    doc.text("Laporan Presensi TAD Balai K3 Samarinda", 14, 15);
-    
-    const tableColumn = ["Nama", "NIK", "Waktu Masuk", "Waktu Pulang", "Status"];
-    const tableRows = data.map(item => [
-      item.nama,
-      item.nik,
-      formatTime(item.jamMasuk),
-      formatTime(item.jamPulang),
-      item.status
-    ]);
-
-    autoTable(doc, {
-      head: [tableColumn],
-      body: tableRows,
-      startY: 20,
+    import('../utils/pdfExport').then(({ generateRekapPDF }) => {
+      // Panggil utility logikanya
+      generateRekapPDF(data, `Periode: ${new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}`);
     });
-    
-    doc.save(`Laporan_Presensi_${new Date().getTime()}.pdf`);
   };
+
+  // Reset pagination when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, itemsPerPage]);
+
+  // Derived state for filtering and pagination
+  const filteredData = data.filter(item => {
+    const matchesSearch = item.nama?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          item.nik?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === 'Semua' || item.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const totalPages = Math.max(1, Math.ceil(filteredData.length / itemsPerPage));
+  const paginatedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative">
@@ -109,6 +115,55 @@ export default function AdminTable() {
           >
             <FaDownload /> Export PDF
           </button>
+        </div>
+      </div>
+
+      {/* Filter and Control Bar */}
+      <div className="p-4 border-b border-gray-100 bg-white flex flex-col sm:flex-row gap-4 items-center justify-between">
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+          {/* Search Box */}
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FaSearch className="text-gray-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="Cari nama atau NIK..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full sm:w-64 pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-k3-blue focus:border-k3-blue outline-none text-sm transition-all text-gray-700 placeholder-gray-400"
+            />
+          </div>
+
+          {/* Status Filter */}
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FaFilter className="text-gray-400" />
+            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full sm:w-48 pl-10 pr-8 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-k3-blue focus:border-k3-blue outline-none text-sm appearance-none bg-white text-gray-700 cursor-pointer"
+            >
+              <option value="Semua">Semua Status</option>
+              {STATUS_KEHADIRAN.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {/* Rows per page */}
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          <span>Tampilkan:</span>
+          <select 
+            value={itemsPerPage} 
+            onChange={(e) => setItemsPerPage(Number(e.target.value))}
+            className="border border-gray-200 rounded-lg px-2 py-1.5 outline-none focus:border-k3-blue focus:ring-2 focus:ring-k3-blue/20 bg-white cursor-pointer"
+          >
+            <option value={5}>5</option>
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+          </select>
         </div>
       </div>
 
@@ -134,8 +189,12 @@ export default function AdminTable() {
               <tr>
                 <td colSpan={7} className="text-center py-8 text-gray-400">Belum ada data presensi.</td>
               </tr>
-            ) : data.map((item, i) => (
-              <tr key={i} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors text-sm">
+            ) : filteredData.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="text-center py-8 text-gray-400">Data tidak ditemukan dengan filter tersebut.</td>
+              </tr>
+            ) : paginatedData.map((item, i) => (
+              <tr key={item.rowId || i} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors text-sm">
                 <td className="px-4 py-3">
                   <div className="font-medium text-gray-800">{item.nama}</div>
                   <div className="text-xs text-gray-500">{item.nik}</div>
@@ -173,6 +232,60 @@ export default function AdminTable() {
           </tbody>
         </table>
       </div>
+
+      {/* Pagination Footer */}
+      {!loading && filteredData.length > 0 && (
+        <div className="p-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gray-50/50">
+          <div className="text-sm text-gray-500">
+            Menampilkan data <span className="font-medium text-gray-700">{(currentPage - 1) * itemsPerPage + 1}</span> hingga <span className="font-medium text-gray-700">{Math.min(currentPage * itemsPerPage, filteredData.length)}</span> dari total <span className="font-medium text-gray-700">{filteredData.length}</span> entri
+          </div>
+          <div className="flex gap-1 overflow-x-auto">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-white"
+            >
+              <FaChevronLeft size={14} />
+            </button>
+            
+            {/* Simplified Page numbers untuk UI ringkas */}
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+              // Menampilkan halaman dengan format 1 2 3 ... 10 untuk UX optimal jika halaman banyak
+              if (
+                page === 1 || 
+                page === totalPages || 
+                (page >= currentPage - 1 && page <= currentPage + 1)
+              ) {
+                return (
+                  <button
+                    key={page}
+                    onClick={() => setCurrentPage(page)}
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                      currentPage === page 
+                        ? 'bg-k3-blue text-white border border-k3-blue shadow-sm' 
+                        : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    {page}
+                  </button>
+                );
+              }
+              if (page === currentPage - 2 || page === currentPage + 2) {
+                return <span key={page} className="px-2 py-1.5 text-gray-400">...</span>;
+              }
+              return null;
+            })}
+
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="p-2 border border-gray-200 rounded-lg text-gray-500 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors bg-white"
+            >
+              <FaChevronRight size={14} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Edit Modal */}
       {editingRow && (
