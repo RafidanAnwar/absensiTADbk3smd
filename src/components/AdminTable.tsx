@@ -1,6 +1,4 @@
 import { useState, useEffect } from 'react';
-import { jsPDF } from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { FaDownload, FaSyncAlt, FaEdit, FaTrash, FaSearch, FaFilter, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { fetchPresensi, deletePresensi, updatePresensi } from '../utils/api';
 import { STATUS_KEHADIRAN } from '../utils/data';

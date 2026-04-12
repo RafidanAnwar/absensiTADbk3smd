@@ -129,11 +129,11 @@ export const generateRekapPDF = (rawData: any[], periodeStr: string = 'Periode: 
     margin: { top: 38, bottom: 25 },
     // Menambahkan penomoran halaman di bawah (didDrawPage dipanggil setiap ada rendering page baru)
     didDrawPage: function (data) {
-      const pageCount = doc.internal.getNumberOfPages();
+      const pageCount = (doc.internal as any).getNumberOfPages();
       doc.setFontSize(9);
       doc.setTextColor(150);
       doc.text(
-        `Halaman ${data.pageNumber} `,
+        `Halaman ${data.pageNumber} dari ${pageCount}`,
         doc.internal.pageSize.getWidth() / 2,
         doc.internal.pageSize.getHeight() - 10,
         { align: 'center' }
