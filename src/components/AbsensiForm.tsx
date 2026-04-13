@@ -26,8 +26,11 @@ export default function AbsensiForm() {
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  const [tipeAbsenUser, setTipeAbsenUser] = useState<'Masuk' | 'Pulang' | null>(null);
+
   const isOperasional = isMasukTime() || isPulangTime();
-  const tipeAbsen = isMasukTime() ? 'Masuk' : (isPulangTime() ? 'Pulang' : getTipeAbsenFallback());
+  const detectedTipe = isMasukTime() ? 'Masuk' : (isPulangTime() ? 'Pulang' : getTipeAbsenFallback());
+  const tipeAbsen = tipeAbsenUser || detectedTipe;
 
   useEffect(() => {
     // Update live clock
@@ -206,40 +209,62 @@ export default function AbsensiForm() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
+              <label className="block text-sm font-medium text-blue-50 mb-1 drop-shadow-sm">Jenis Presensi</label>
+              <div className="flex bg-black/20 p-1 rounded-xl shadow-inner border border-white/10 h-[46px]">
+                <button
+                  type="button"
+                  onClick={() => setTipeAbsenUser('Masuk')}
+                  className={`flex-1 flex items-center justify-center text-sm font-medium rounded-lg transition-all ${tipeAbsen === 'Masuk' ? 'bg-k3-green text-white shadow-md' : 'text-blue-100/70 hover:text-white hover:bg-white/5'}`}
+                  disabled={isSubmitLoading}
+                >
+                  Masuk
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTipeAbsenUser('Pulang')}
+                  className={`flex-1 flex items-center justify-center text-sm font-medium rounded-lg transition-all ${tipeAbsen === 'Pulang' ? 'bg-k3-green text-white shadow-md' : 'text-blue-100/70 hover:text-white hover:bg-white/5'}`}
+                  disabled={isSubmitLoading}
+                >
+                  Pulang
+                </button>
+              </div>
+            </div>
+            <div>
               <label className="block text-sm font-medium text-blue-50 mb-1 drop-shadow-sm">Status Kehadiran</label>
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="glass-input w-full px-4 py-2.5 rounded-xl outline-none [&>option]:text-gray-800"
+                className="glass-input w-full px-4 h-[46px] rounded-xl outline-none [&>option]:text-gray-800"
                 disabled={isSubmitLoading}
               >
                 {STATUS_KEHADIRAN.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
-            <div className="flex flex-col">
-              <label className="block text-sm font-medium text-blue-50 mb-1 drop-shadow-sm">Lokasi</label>
-              {location ? (
-                <div className="relative w-full h-24 md:h-full min-h-[60px] rounded-xl overflow-hidden border border-white/20 shadow-inner group">
-                  <iframe
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0, minHeight: '60px' }}
-                    loading="lazy"
-                    allowFullScreen
-                    referrerPolicy="no-referrer-when-downgrade"
-                    src={`https://maps.google.com/maps?q=${location.lat},${location.lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
-                  ></iframe>
-                  <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white/90 text-xs px-2 py-1 text-center backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity">
-                    {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
-                  </div>
+          </div>
+
+          <div className="flex flex-col">
+            <label className="block text-sm font-medium text-blue-50 mb-1 drop-shadow-sm">Lokasi</label>
+            {location ? (
+              <div className="relative w-full h-32 md:h-40 rounded-xl overflow-hidden border border-white/20 shadow-inner group">
+                <iframe
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  loading="lazy"
+                  allowFullScreen
+                  referrerPolicy="no-referrer-when-downgrade"
+                  src={`https://maps.google.com/maps?q=${location.lat},${location.lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                ></iframe>
+                <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white/90 text-xs px-2 py-1 text-center backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity">
+                  {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
                 </div>
-              ) : (
-                <div className="w-full h-full min-h-[44px] px-4 py-2.5 bg-black/20 border border-white/10 rounded-xl text-sm flex items-center gap-2 text-blue-100 shadow-inner">
-                  <FaMapMarkerAlt className="text-red-400 shrink-0" />
-                  {locationText}
-                </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="w-full h-12 px-4 bg-black/20 border border-white/10 rounded-xl text-sm flex items-center gap-2 text-blue-100 shadow-inner">
+                <FaMapMarkerAlt className="text-red-400 shrink-0" />
+                {locationText}
+              </div>
+            )}
           </div>
 
           <div>
