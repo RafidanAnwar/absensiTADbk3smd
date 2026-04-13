@@ -29,8 +29,6 @@ export default function AbsensiForm() {
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const isOperasional = isMasukTime() || isPulangTime();
-
   useEffect(() => {
     // Update live clock
     const timer = setInterval(() => {
