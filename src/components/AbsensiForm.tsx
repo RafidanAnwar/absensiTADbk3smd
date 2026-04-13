@@ -7,12 +7,15 @@ import { getCurrentWITA, isMasukTime, isPulangTime, getTipeAbsenFallback } from 
 import { submitPresensi } from '../utils/api';
 
 export default function AbsensiForm() {
+  const defaultTipe = isMasukTime() ? 'Masuk' : (isPulangTime() ? 'Pulang' : getTipeAbsenFallback());
+
   const [formData, setFormData] = useState({
     nama: '',
     nik: '',
     jabatan: '',
     status: 'Hadir',
     aktivitas: '',
+    tipe: defaultTipe,
   });
 
   const [suggestions, setSuggestions] = useState<Pegawai[]>([]);
@@ -26,11 +29,7 @@ export default function AbsensiForm() {
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const [tipeAbsenUser, setTipeAbsenUser] = useState<'Masuk' | 'Pulang' | null>(null);
-
   const isOperasional = isMasukTime() || isPulangTime();
-  const detectedTipe = isMasukTime() ? 'Masuk' : (isPulangTime() ? 'Pulang' : getTipeAbsenFallback());
-  const tipeAbsen = tipeAbsenUser || detectedTipe;
 
   useEffect(() => {
     // Update live clock
@@ -77,7 +76,8 @@ export default function AbsensiForm() {
       ...formData,
       nama: p.nama,
       nik: p.nik,
-      jabatan: p.jabatan
+      jabatan: p.jabatan,
+      tipe: defaultTipe
     });
     setSuggestions([]);
   };
@@ -102,7 +102,7 @@ export default function AbsensiForm() {
       const payload = {
         ...formData,
         waktu: getCurrentWITA().timeString,
-        tipe: tipeAbsen, // 'Masuk' atau 'Pulang'
+        tipe: formData.tipe,
         lokasi: location ? `${location.lat},${location.lng}` : '',
         fotoBase64: foto
       };
@@ -112,7 +112,7 @@ export default function AbsensiForm() {
       setIsSuccess(true);
       setTimeout(() => {
         setIsSuccess(false);
-        setFormData({ nama: '', nik: '', jabatan: '', status: '', aktivitas: '' });
+        setFormData({ nama: '', nik: '', jabatan: '', status: 'Hadir', aktivitas: '', tipe: defaultTipe });
         setFoto(null);
       }, 3000);
     } catch (err) {
@@ -136,12 +136,6 @@ export default function AbsensiForm() {
           {timeWITA || "Memuat..."} WITA
         </div>
       </div>
-
-      {!isOperasional && !isSuccess && (
-        <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 border border-red-100">
-          Saat ini di luar jam operasional absensi.
-        </div>
-      )}
 
       {isSuccess ? (
         <motion.div
@@ -209,35 +203,28 @@ export default function AbsensiForm() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-blue-50 mb-1 drop-shadow-sm">Jenis Presensi</label>
-              <div className="flex bg-black/20 p-1 rounded-xl shadow-inner border border-white/10 h-[46px]">
-                <button
-                  type="button"
-                  onClick={() => setTipeAbsenUser('Masuk')}
-                  className={`flex-1 flex items-center justify-center text-sm font-medium rounded-lg transition-all ${tipeAbsen === 'Masuk' ? 'bg-k3-green text-white shadow-md' : 'text-blue-100/70 hover:text-white hover:bg-white/5'}`}
-                  disabled={isSubmitLoading}
-                >
-                  Masuk
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTipeAbsenUser('Pulang')}
-                  className={`flex-1 flex items-center justify-center text-sm font-medium rounded-lg transition-all ${tipeAbsen === 'Pulang' ? 'bg-k3-green text-white shadow-md' : 'text-blue-100/70 hover:text-white hover:bg-white/5'}`}
-                  disabled={isSubmitLoading}
-                >
-                  Pulang
-                </button>
-              </div>
-            </div>
-            <div>
               <label className="block text-sm font-medium text-blue-50 mb-1 drop-shadow-sm">Status Kehadiran</label>
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="glass-input w-full px-4 h-[46px] rounded-xl outline-none [&>option]:text-gray-800"
+                className="glass-input w-full px-4 py-2.5 rounded-xl outline-none [&>option]:text-gray-800"
                 disabled={isSubmitLoading}
               >
                 {STATUS_KEHADIRAN.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-blue-50 mb-1 drop-shadow-sm">Tipe Absen</label>
+              <select
+                value={formData.tipe}
+                onChange={(e) => setFormData({ ...formData, tipe: e.target.value })}
+                className={`glass-input w-full px-4 py-2.5 rounded-xl outline-none [&>option]:text-gray-800 ${
+                  !['petugas keamanan', 'satpam'].includes(formData.jabatan.toLowerCase()) ? 'opacity-70 cursor-not-allowed' : ''
+                }`}
+                disabled={isSubmitLoading || !['petugas keamanan', 'satpam'].includes(formData.jabatan.toLowerCase())}
+              >
+                <option value="Masuk">Masuk</option>
+                <option value="Pulang">Pulang</option>
               </select>
             </div>
           </div>
@@ -245,27 +232,27 @@ export default function AbsensiForm() {
           <div className="flex flex-col">
             <label className="block text-sm font-medium text-blue-50 mb-1 drop-shadow-sm">Lokasi</label>
             {location ? (
-              <div className="relative w-full h-32 md:h-40 rounded-xl overflow-hidden border border-white/20 shadow-inner group">
-                <iframe
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  loading="lazy"
-                  allowFullScreen
-                  referrerPolicy="no-referrer-when-downgrade"
-                  src={`https://maps.google.com/maps?q=${location.lat},${location.lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
-                ></iframe>
-                <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white/90 text-xs px-2 py-1 text-center backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity">
-                  {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
+                <div className="relative w-full h-24 md:h-full min-h-[60px] rounded-xl overflow-hidden border border-white/20 shadow-inner group">
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0, minHeight: '60px' }}
+                    loading="lazy"
+                    allowFullScreen
+                    referrerPolicy="no-referrer-when-downgrade"
+                    src={`https://maps.google.com/maps?q=${location.lat},${location.lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                  ></iframe>
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white/90 text-xs px-2 py-1 text-center backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity">
+                    {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="w-full h-12 px-4 bg-black/20 border border-white/10 rounded-xl text-sm flex items-center gap-2 text-blue-100 shadow-inner">
-                <FaMapMarkerAlt className="text-red-400 shrink-0" />
-                {locationText}
-              </div>
-            )}
-          </div>
+              ) : (
+                <div className="w-full h-full min-h-[44px] px-4 py-2.5 bg-black/20 border border-white/10 rounded-xl text-sm flex items-center gap-2 text-blue-100 shadow-inner">
+                  <FaMapMarkerAlt className="text-red-400 shrink-0" />
+                  {locationText}
+                </div>
+              )}
+            </div>
 
           <div>
             <label className="block text-sm font-medium text-blue-50 mb-1 drop-shadow-sm">Aktivitas</label>
@@ -335,7 +322,7 @@ export default function AbsensiForm() {
             className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all tracking-wide 
               ${(!foto || isSubmitLoading) ? 'bg-white/10 text-white/40 cursor-not-allowed border border-white/5' : 'bg-white text-k3-dark hover:bg-green-50 shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-[1.02] active:scale-[0.98]'}`}
           >
-            {isSubmitLoading ? 'Tunggu...' : `🚀 Submit Absen ${tipeAbsen || ''}`}
+            {isSubmitLoading ? 'Tunggu...' : `🚀 Submit Absen ${formData.tipe || ''}`}
           </button>
         </form>
       )}
