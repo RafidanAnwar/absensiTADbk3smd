@@ -26,8 +26,21 @@ export default function AdminTable() {
   // Filter & Pagination States
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('Semua');
+  
+  // Monthly Filter States
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth()); // 0-11
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const months = [
+    'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+    'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+  ];
+
+  // Generate years (current year down to 2024 or -5 years)
+  const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
 
   const loadData = async () => {
     setLoading(true);
@@ -75,22 +88,42 @@ export default function AdminTable() {
 
   const exportPDF = () => {
     import('../utils/pdfExport').then(({ generateRekapPDF }) => {
-      // Panggil utility logikanya
-      generateRekapPDF(data, `Periode: ${new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })}`);
+      // Panggil utility logikanya dengan data yang sudah di-filter (kecuali status & search jika ingin rekap murni bulanan)
+      // Namun biasanya rekap bulanan berarti semua data di bulan tersebut
+      
+      // Kita gunakan data yang sudah di-filter berdasarkan bulan & tahun saja untuk rekap murni
+      const monthlyData = data.filter(item => {
+        if (!item.tanggal || typeof item.tanggal !== 'string') return false;
+        const [y, m] = item.tanggal.split('-').map(Number);
+        return (m - 1) === selectedMonth && y === selectedYear;
+      });
+
+      const periodStr = `Periode: ${months[selectedMonth]} ${selectedYear}`;
+      generateRekapPDF(monthlyData, periodStr);
     });
   };
 
   // Reset pagination when filters change
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery, statusFilter, itemsPerPage]);
+  }, [searchQuery, statusFilter, itemsPerPage, selectedMonth, selectedYear]);
 
   // Derived state for filtering and pagination
   const filteredData = data.filter(item => {
     const matchesSearch = item.nama?.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           item.nik?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'Semua' || item.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    
+    // Monthly Filter Logic
+    let matchesDate = true;
+    if (item.tanggal && typeof item.tanggal === 'string') {
+      const [y, m] = item.tanggal.split('-').map(Number);
+      matchesDate = (m - 1) === selectedMonth && y === selectedYear;
+    } else {
+      matchesDate = false; // Hide if no date
+    }
+
+    return matchesSearch && matchesStatus && matchesDate;
   });
 
   const totalPages = Math.max(1, Math.ceil(filteredData.length / itemsPerPage));
@@ -99,7 +132,10 @@ export default function AdminTable() {
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden relative">
       <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-        <h2 className="font-bold text-gray-700">Data Presensi Hari Ini</h2>
+        <div>
+          <h2 className="font-bold text-gray-700">Data Presensi</h2>
+          <p className="text-xs text-gray-500">{months[selectedMonth]} {selectedYear}</p>
+        </div>
         <div className="flex gap-2">
           <button 
             onClick={loadData}
@@ -117,8 +153,29 @@ export default function AdminTable() {
       </div>
 
       {/* Filter and Control Bar */}
-      <div className="p-4 border-b border-gray-100 bg-white flex flex-col sm:flex-row gap-4 items-center justify-between">
-        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+      <div className="p-4 border-b border-gray-100 bg-white flex flex-col xl:flex-row gap-4 items-center justify-between">
+        <div className="flex flex-col md:flex-row gap-3 w-full xl:w-auto">
+          {/* Monthly Filter Area */}
+          <div className="flex gap-2 w-full md:w-auto">
+            <select
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(Number(e.target.value))}
+              className="flex-1 md:w-40 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-k3-blue focus:border-k3-blue outline-none text-sm bg-white text-gray-700 cursor-pointer"
+            >
+              {months.map((m, i) => <option key={m} value={i}>{m}</option>)}
+            </select>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="w-24 px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-k3-blue focus:border-k3-blue outline-none text-sm bg-white text-gray-700 cursor-pointer"
+            >
+              {years.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </div>
+
+          <div className="h-4 md:h-8 w-[1px] bg-gray-200 hidden md:block"></div>
+
+          <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
           {/* Search Box */}
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -148,6 +205,7 @@ export default function AdminTable() {
             </select>
           </div>
         </div>
+      </div>
 
         {/* Rows per page */}
         <div className="flex items-center gap-2 text-sm text-gray-500">

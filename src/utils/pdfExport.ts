@@ -142,6 +142,7 @@ export const generateRekapPDF = (rawData: any[], periodeStr: string = 'Periode: 
   });
 
   // 5. Export / Simpan File PDF
-  const filename = `Rekap_Presensi_${new Date().toISOString().slice(0, 10)}.pdf`;
+  const cleanPeriode = periodeStr.replace('Periode: ', '').replace(/\s+/g, '_');
+  const filename = `Rekap_Presensi_${cleanPeriode}.pdf`;
   doc.save(filename);
 };

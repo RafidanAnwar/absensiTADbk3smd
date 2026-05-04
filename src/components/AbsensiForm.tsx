@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import Webcam from 'react-webcam';
-import { FaCamera, FaMapMarkerAlt, FaSyncAlt } from 'react-icons/fa';
+import { FaCamera, FaMapMarkerAlt } from 'react-icons/fa';
 import { DATA_PEGAWAI, STATUS_KEHADIRAN, type Pegawai } from '../utils/data';
 import { getCurrentWITA, isMasukTime, isPulangTime, getTipeAbsenFallback } from '../utils/time';
 import { submitPresensi } from '../utils/api';
+import Swal from 'sweetalert2';
 
 export default function AbsensiForm() {
   const defaultTipe = isMasukTime() ? 'Masuk' : (isPulangTime() ? 'Pulang' : getTipeAbsenFallback());
@@ -13,7 +14,7 @@ export default function AbsensiForm() {
     nama: '',
     nik: '',
     jabatan: '',
-    status: 'Hadir',
+    status: '',
     aktivitas: '',
     tipe: defaultTipe,
   });
@@ -27,7 +28,6 @@ export default function AbsensiForm() {
 
   const [timeWITA, setTimeWITA] = useState('');
   const [isSubmitLoading, setIsSubmitLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
 
   useEffect(() => {
     // Update live clock
@@ -107,12 +107,17 @@ export default function AbsensiForm() {
 
       await submitPresensi(payload);
 
-      setIsSuccess(true);
-      setTimeout(() => {
-        setIsSuccess(false);
-        setFormData({ nama: '', nik: '', jabatan: '', status: 'Hadir', aktivitas: '', tipe: defaultTipe });
-        setFoto(null);
-      }, 3000);
+      Swal.fire({
+        icon: 'success',
+        title: 'Presensi Berhasil!',
+        text: 'Data Anda telah tersimpan ke sistem.',
+        confirmButtonColor: '#10B981',
+        timer: 3000,
+        timerProgressBar: true
+      });
+
+      setFormData({ nama: '', nik: '', jabatan: '', status: '', aktivitas: '', tipe: defaultTipe });
+      setFoto(null);
     } catch (err) {
       alert("Gagal mengirim presensi");
       console.error(err);
@@ -125,165 +130,173 @@ export default function AbsensiForm() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-panel p-6 md:p-8 rounded-3xl w-full"
+      className="w-full"
     >
-      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6">
-        <h2 className="text-xl font-bold text-white tracking-wide text-center sm:text-left">Formulir Presensi</h2>
-        <div className="bg-white/10 px-4 py-2 rounded-full text-white flex items-center gap-2 font-medium shadow-inner border border-white/10 backdrop-blur-md text-sm sm:text-base">
-          <FaSyncAlt className="animate-spin-slow" />
-          {timeWITA || "Memuat..."} WITA
-        </div>
-      </div>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-[31px]">
 
-      {isSuccess ? (
-        <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          className="bg-k3-green/20 backdrop-blur-md z-10 text-white p-8 rounded-2xl text-center border-2 border-k3-green/50 shadow-[0_0_20px_rgba(29,185,84,0.3)]"
-        >
-          <div className="text-4xl mb-4 text-center mx-auto w-16 h-16 bg-white/20 rounded-full flex items-center justify-center shadow-inner">✅</div>
-          <h3 className="font-bold text-xl mb-2 drop-shadow-md">Presensi Berhasil!</h3>
-          <p className="text-green-50">Terima kasih, data Anda telah tersimpan ke sistem.</p>
-        </motion.div>
-      ) : (
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Form Fields */}
-          <div className="relative z-20">
-            <label className="block text-sm font-medium text-blue-50 mb-1 drop-shadow-sm">Nama Lengkap & Gelar</label>
-            <input
-              type="text"
-              required
-              value={formData.nama}
-              onChange={handleNameChange}
-              className="glass-input w-full px-4 py-2.5 rounded-xl outline-none"
-              placeholder="Ketik nama Anda..."
-              disabled={isSubmitLoading}
-            />
-            {suggestions.length > 0 && (
-              <ul className="absolute top-full mt-2 w-full bg-slate-800/90 backdrop-blur-xl border border-white/10 shadow-2xl rounded-xl max-h-48 overflow-auto z-30">
-                {suggestions.map((p, i) => (
-                  <li
-                    key={i}
-                    onClick={() => selectPegawai(p)}
-                    className="px-4 py-3 hover:bg-white/10 cursor-pointer text-sm text-blue-50 border-b border-white/5 last:border-0 transition-colors"
-                  >
-                    {p.nama}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-blue-50 mb-1 drop-shadow-sm">NIK</label>
-              <input
-                type="text"
-                required
-                value={formData.nik}
-                onChange={(e) => setFormData({ ...formData, nik: e.target.value })}
-                className="glass-input w-full px-4 py-2.5 rounded-xl outline-none"
-                disabled={isSubmitLoading}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-blue-50 mb-1 drop-shadow-sm">Jabatan</label>
-              <input
-                type="text"
-                required
-                value={formData.jabatan}
-                onChange={(e) => setFormData({ ...formData, jabatan: e.target.value })}
-                className="glass-input w-full px-4 py-2.5 rounded-xl outline-none"
-                disabled={isSubmitLoading}
-              />
+        {/* Top Box: Header + Data Diri */}
+        <div className="glass-box-top">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-1">
+            <h2 className="text-[#F8FAFC] text-[12px] font-semibold tracking-wide">Formulir Presensi</h2>
+            <div className="flex items-center justify-center border border-white rounded-[19px] px-3 h-[25px] text-[#F8FAFC] text-[12px] font-semibold">
+              {timeWITA || "Memuat..."} WITA
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-blue-50 mb-1 drop-shadow-sm">Status Kehadiran</label>
+          {/* Data Diri Card */}
+          <div className="inner-card">
+
+            <div className="input-group relative z-20">
+              <label className="input-label">Nama Lengkap & Gelar</label>
+              <input
+                type="text"
+                required
+                value={formData.nama}
+                onChange={handleNameChange}
+                className="input-field"
+                placeholder="Ketik nama Anda..."
+                disabled={isSubmitLoading}
+              />
+              {suggestions.length > 0 && (
+                <ul className="absolute top-full mt-1 w-full bg-white border border-[#D5D5D5] shadow-lg rounded-[5px] max-h-40 overflow-auto z-30">
+                  {suggestions.map((p, i) => (
+                    <li
+                      key={i}
+                      onClick={() => selectPegawai(p)}
+                      className="px-3 py-2 hover:bg-gray-100 cursor-pointer text-[12px] text-[#4D4D4D] border-b border-gray-100 last:border-0"
+                    >
+                      {p.nama}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="flex justify-between gap-[17px]">
+              <div className="input-group flex-1">
+                <label className="input-label">NIK</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.nik}
+                  onChange={(e) => setFormData({ ...formData, nik: e.target.value })}
+                  className="input-field"
+                  disabled={isSubmitLoading}
+                />
+              </div>
+              <div className="input-group flex-1">
+                <label className="input-label">Jabatan</label>
+                <input
+                  type="text"
+                  required
+                  value={formData.jabatan}
+                  onChange={(e) => setFormData({ ...formData, jabatan: e.target.value })}
+                  className="input-field"
+                  disabled={isSubmitLoading}
+                />
+              </div>
+            </div>
+
+            <div className="input-group">
+              <label className="input-label">Status Kehadiran</label>
               <select
                 value={formData.status}
                 onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="glass-input w-full px-4 py-2.5 rounded-xl outline-none [&>option]:text-gray-800"
+                className="input-field appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2212%22%20height%3D%2212%22%20viewBox%3D%220%200%2012%2012%22%3E%3Cpath%20fill%3D%22%234D4D4D%22%20d%3D%22M2.146%204.646a.5.5%200%200%201%20.708%200L6%207.793l3.146-3.147a.5.5%200%200%201%20.708.708l-3.5%203.5a.5.5%200%200%201-.708%200l-3.5-3.5a.5.5%200%200%201%200-.708z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:16px_16px] bg-[right_11px_center] bg-no-repeat"
                 disabled={isSubmitLoading}
               >
+                <option value="" disabled hidden>Status Kehadiran anda</option>
                 {STATUS_KEHADIRAN.map(s => <option key={s} value={s}>{s}</option>)}
               </select>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-blue-50 mb-1 drop-shadow-sm">Tipe Absen</label>
+
+            <div className="input-group">
+              <label className="input-label">Tipe Absen</label>
               <select
                 value={formData.tipe}
                 onChange={(e) => setFormData({ ...formData, tipe: e.target.value })}
-                className={`glass-input w-full px-4 py-2.5 rounded-xl outline-none [&>option]:text-gray-800 ${
-                  !['petugas keamanan', 'satpam'].includes(formData.jabatan.toLowerCase()) ? 'opacity-70 cursor-not-allowed' : ''
-                }`}
+                className={`input-field ${!['petugas keamanan', 'satpam'].includes(formData.jabatan.toLowerCase()) ? 'opacity-70 cursor-not-allowed' : ''
+                  }`}
                 disabled={isSubmitLoading || !['petugas keamanan', 'satpam'].includes(formData.jabatan.toLowerCase())}
               >
                 <option value="Masuk">Masuk</option>
                 <option value="Pulang">Pulang</option>
               </select>
             </div>
+
           </div>
 
-          <div className="flex flex-col">
-            <label className="block text-sm font-medium text-blue-50 mb-1 drop-shadow-sm">Lokasi</label>
-            {location ? (
-                <div className="relative w-full h-24 md:h-full min-h-[60px] rounded-xl overflow-hidden border border-white/20 shadow-inner group">
+          {/* Lokasi & Aktivitas Box */}
+          <div className="inner-card">
+            <div className="input-group">
+              <label className="input-label">Lokasi</label>
+              {location ? (
+                <div className="relative w-full h-[118px] rounded-[5px] overflow-hidden border border-[#D5D5D5]">
+                  {/* Hiding Google Maps footer by making iframe taller and cropping it */}
                   <iframe
                     width="100%"
-                    height="100%"
-                    style={{ border: 0, minHeight: '60px' }}
+                    height="160px"
+                    style={{ border: 0, marginTop: '-10px', marginBottom: '-30px' }}
                     loading="lazy"
                     allowFullScreen
                     referrerPolicy="no-referrer-when-downgrade"
                     src={`https://maps.google.com/maps?q=${location.lat},${location.lng}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
                   ></iframe>
-                  <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white/90 text-xs px-2 py-1 text-center backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity">
-                    {location.lat.toFixed(4)}, {location.lng.toFixed(4)}
-                  </div>
                 </div>
               ) : (
-                <div className="w-full h-full min-h-[44px] px-4 py-2.5 bg-black/20 border border-white/10 rounded-xl text-sm flex items-center gap-2 text-blue-100 shadow-inner">
-                  <FaMapMarkerAlt className="text-red-400 shrink-0" />
-                  {locationText}
+                <div className="input-field h-[58px] flex items-center gap-2">
+                  <FaMapMarkerAlt className="text-[#00629D] shrink-0 text-[16px]" />
+                  <span className="font-medium text-[#4D4D4D] text-[12px]">Lokasi Presensi</span>
+                  <span className="text-[#CDCDCD] text-[10px] ml-auto">{locationText}</span>
                 </div>
               )}
             </div>
 
-          <div>
-            <label className="block text-sm font-medium text-blue-50 mb-1 drop-shadow-sm">Aktivitas</label>
-            <textarea
-              value={formData.aktivitas}
-              onChange={(e) => setFormData({ ...formData, aktivitas: e.target.value })}
-              className="glass-input w-full px-4 py-3 rounded-xl outline-none resize-none h-24"
-              placeholder="Deskripsi aktivitas hari ini..."
-              disabled={isSubmitLoading}
-            />
+            <div className="input-group relative">
+              {formData.tipe !== 'Pulang' && (
+                <div
+                  className="absolute inset-x-0 bottom-0 top-[25px] z-10 cursor-not-allowed"
+                  onClick={() => {
+                    Swal.fire({
+                      icon: 'info',
+                      title: 'Aktivitas Terkunci',
+                      text: 'Anda hanya dapat mengisi aktivitas harian saat melakukan Absen Pulang.',
+                      confirmButtonColor: '#0A4A8E',
+                    });
+                  }}
+                ></div>
+              )}
+              <label className="input-label">Aktivitas Hari Ini</label>
+              <textarea
+                value={formData.aktivitas}
+                onChange={(e) => setFormData({ ...formData, aktivitas: e.target.value })}
+                className={`w-full h-[118px] bg-[#FCFCFC] border border-[#D5D5D5] rounded-[5px] px-[11px] py-2 outline-none resize-none font-medium text-[12px] text-[#4D4D4D] transition-opacity ${formData.tipe !== 'Pulang' ? 'opacity-50' : ''}`}
+                placeholder={formData.tipe === 'Pulang' ? "Ceritakan aktivitas anda hari ini selama bekerja" : "Aktivitas diisi saat absen pulang"}
+                disabled={isSubmitLoading || formData.tipe !== 'Pulang'}
+              />
+            </div>
           </div>
 
+          {/* Camera Box */}
           <div>
-            <label className="block text-sm font-medium text-blue-50 mb-2 drop-shadow-sm">Bukti Foto</label>
             {!foto ? (
               showWebcam ? (
-                <div className="relative rounded-2xl overflow-hidden bg-black text-center shadow-2xl border-2 border-white/20">
+                <div className="relative rounded-[8px] overflow-hidden bg-black text-center border border-white/50 h-[130px] flex items-center justify-center">
                   <Webcam
                     audio={false}
                     ref={webcamRef}
                     screenshotFormat="image/jpeg"
                     screenshotQuality={0.8}
                     videoConstraints={{
-                      facingMode: "user",
-                      width: { ideal: 640 },
-                      height: { ideal: 480 }
+                      facingMode: "user"
                     }}
-                    className="w-full max-h-64 object-cover"
+                    className="w-full h-[130px] object-cover"
                   />
                   <button
                     type="button"
                     onClick={capture}
-                    className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm text-k3-dark px-6 py-2.5 rounded-full font-bold shadow-[0_0_15px_rgba(255,255,255,0.4)] hover:scale-105 active:scale-95 transition-all outline-none"
+                    className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-white/90 text-k3-dark px-4 py-[6px] rounded-full font-semibold shadow-md hover:scale-105 active:scale-95 transition-all text-[12px]"
                   >
                     📸 Ambil Foto
                   </button>
@@ -292,20 +305,23 @@ export default function AbsensiForm() {
                 <button
                   type="button"
                   onClick={() => setShowWebcam(true)}
-                  className="w-full py-6 md:py-10 border border-dashed border-white/30 rounded-2xl text-blue-100 hover:border-white/80 hover:bg-white/5 transition-all flex flex-col items-center gap-3 backdrop-blur-sm shadow-inner group"
+                  className="camera-box"
                   disabled={isSubmitLoading}
                 >
-                  <FaCamera size={36} className="text-white/50 group-hover:text-white group-hover:scale-110 transition-all" />
-                  <span className="font-medium tracking-wide">Aktifkan Kamera</span>
+                  <FaCamera className="text-[#FFFFFF] text-[25px]" />
+                  <div className="flex flex-col items-center">
+                    <span className="camera-text-primary">Aktifkan Kamera</span>
+                    <span className="camera-text-secondary">Ambil foto selfie di lokasi kerja</span>
+                  </div>
                 </button>
               )
             ) : (
-              <div className="relative rounded-2xl overflow-hidden shadow-2xl inline-block border-2 border-k3-green/50">
-                <img src={foto} alt="Bukti Absen" className="max-h-64 object-cover" />
+              <div className="relative rounded-[8px] overflow-hidden shadow-sm border border-[#10B981] h-[130px] w-full flex justify-center bg-black">
+                <img src={foto} alt="Bukti Absen" className="h-[130px] w-full object-cover" />
                 <button
                   type="button"
                   onClick={() => setFoto(null)}
-                  className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded-full shadow-lg hover:bg-red-600 transition-colors"
+                  className="absolute top-2 right-2 bg-red-500 text-white w-6 h-6 flex items-center justify-center rounded-full shadow-lg hover:bg-red-600 transition-colors text-xs"
                   disabled={isSubmitLoading}
                 >
                   ✕
@@ -313,17 +329,26 @@ export default function AbsensiForm() {
               </div>
             )}
           </div>
+        </div>
+        {/* End of Unified Glass Container */}
 
+        {/* Submit Button */}
+        <div className="flex flex-col gap-4 items-center">
           <button
             type="submit"
             disabled={!foto || isSubmitLoading}
-            className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all tracking-wide 
-              ${(!foto || isSubmitLoading) ? 'bg-white/10 text-white/40 cursor-not-allowed border border-white/5' : 'bg-white text-k3-dark hover:bg-green-50 shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-[1.02] active:scale-[0.98]'}`}
+            className="submit-btn"
           >
-            {isSubmitLoading ? 'Tunggu...' : `🚀 Submit Absen ${formData.tipe || ''}`}
+            {isSubmitLoading ? 'Tunggu...' : 'Submit Absen'}
           </button>
-        </form>
-      )}
+          <p className="footer-text">
+            Pencatatan Waktu Dilakukan Secara Otomatis
+          </p>
+          {/* Home Indicator */}
+          <div className="home-indicator"></div>
+        </div>
+
+      </form>
     </motion.div>
   );
 }
